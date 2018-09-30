@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Login</string>
+    <string name="email">Email</string>
+    <string name="password">Senha</string>
+    <string name="sign_in_button">Entrar</string>
+    <string name="sign_up_button">Cadastre-se</string>
+    <string name="login_info">Já tem uma conta?</string>
+    <string name="sign_out">Sair</string>
+    <string name="name">Nome</string>
+    <string name="cpf">CPF</string>
+    <string name="password_confirmation">Re-digite a senha</string>
+    <string name="register">Cadastrar</string>
+    <string name="last_name">Sobrenome</string>
+    <string name="work_in_progress">WORK IN PROGRESS</string>
+    <string name="answered">Respondida</string>
+    <string name="not_answered">Não respondida</string>
+    <string name="title">Title</string>
+    <string name="link">Link</string>
+    <string name="owner_name">Name</string>
+    <string name="is_answered">Is Answered</string>
+    <string name="tags">Tags</string>
+    <string name="creation_date">Creation Date</string>
+    <string name="search">Buscar</string>
+    <string name="search_hint">Digite uma tag</string>
+</resources>
