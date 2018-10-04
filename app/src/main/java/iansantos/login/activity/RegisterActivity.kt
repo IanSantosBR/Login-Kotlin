@@ -5,8 +5,9 @@ package iansantos.login.activity
 import android.app.ProgressDialog
 import android.content.Context
 import android.os.Bundle
-import android.text.TextUtils
+import android.text.TextUtils.isEmpty
 import android.util.Log
+import android.util.Patterns
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -17,6 +18,8 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import iansantos.login.R
 import iansantos.login.model.CloudFirestoreUser
+import iansantos.login.utils.Mask
+import iansantos.login.utils.Mask.CPF_MASK
 import java.util.*
 
 private const val TAG = "RegisterActivity"
@@ -41,6 +44,7 @@ class RegisterActivity : AppCompatActivity() {
         lastName = findViewById(R.id.last_name)
         email = findViewById(R.id.email)
         cpf = findViewById(R.id.cpf)
+        cpf!!.addTextChangedListener(Mask.insert(CPF_MASK, cpf))
         password = findViewById(R.id.password)
         passwordConfirmation = findViewById(R.id.password_confirmation)
         mAuth = FirebaseAuth.getInstance()
@@ -51,7 +55,7 @@ class RegisterActivity : AppCompatActivity() {
     @Suppress("UNUSED_PARAMETER")
     fun registerNewUser(view: View) {
         hideKeyboard()
-        if (areValidFields() && passwordsMatch()) {
+        if (areValidFields()) {
             dialog = ProgressDialog.show(this@RegisterActivity, "", "Criando sua conta...", true)
             mAuth!!.createUserWithEmailAndPassword(email!!.text.toString(), password!!.text.toString()).addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
@@ -83,41 +87,48 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun areValidFields(): Boolean {
         var areValidFields = true
-        if (TextUtils.isEmpty(name!!.text.toString().trim { it <= ' ' })) {
+        if (isEmpty(name!!.text.toString().trim { it <= ' ' })) {
             name!!.error = "Digite o nome"
             areValidFields = false
         }
-        if (TextUtils.isEmpty(lastName!!.text.toString().trim { it <= ' ' })) {
+        if (isEmpty(lastName!!.text.toString().trim { it <= ' ' })) {
             lastName!!.error = "Digite o sobrenome"
             areValidFields = false
         }
-        if (TextUtils.isEmpty(email!!.text.toString().trim { it <= ' ' })) {
+        if (isEmpty(email!!.text.toString().trim { it <= ' ' })) {
             email!!.error = "Digite o email"
             areValidFields = false
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(email!!.text).matches()) {
+            email!!.error = "Email não é válido"
+            areValidFields = false
         }
-        if (TextUtils.isEmpty(cpf!!.text.toString().trim { it <= ' ' })) {
+        if (isEmpty(cpf!!.text.toString().trim { it <= ' ' })) {
             cpf!!.error = "Digite o CPF"
             areValidFields = false
-        }
-        if (TextUtils.isEmpty(password!!.text.toString().trim { it <= ' ' })) {
-            password!!.error = "Digite a senha"
+        } else if (cpf!!.text.toString().length < 14) {
+            cpf!!.error = "CPF não é válido"
             areValidFields = false
         }
-        if (TextUtils.isEmpty(passwordConfirmation!!.text.toString().trim { it <= ' ' })) {
+        if (password!!.text.toString() != passwordConfirmation!!.text.toString()) {
+            password!!.error = "Senhas não correspondem"
+            passwordConfirmation!!.error = "Senhas não correspondem"
+            areValidFields = false
+        }
+        if (isEmpty(password!!.text.toString().trim { it <= ' ' })) {
+            password!!.error = "Digite a senha"
+            areValidFields = false
+        } else if (password!!.text.toString().length < 6) {
+            password!!.error = "Mínimo de 6 caracteres"
+            areValidFields = false
+        }
+        if (isEmpty(passwordConfirmation!!.text.toString().trim { it <= ' ' })) {
             passwordConfirmation!!.error = "Re-digite a senha"
+            areValidFields = false
+        } else if (passwordConfirmation!!.text.toString().length < 6) {
+            passwordConfirmation!!.error = "Mínimo de 6 caracteres"
             areValidFields = false
         }
         return areValidFields
-    }
-
-    private fun passwordsMatch(): Boolean {
-        var passwordsMatch = true
-        if (password!!.text.toString() != passwordConfirmation!!.text.toString()) {
-            passwordsMatch = false
-            password!!.error = "Senhas não correspondem"
-            passwordConfirmation!!.error = "Senhas não correspondem"
-        }
-        return passwordsMatch
     }
 
     private fun hideKeyboard() {

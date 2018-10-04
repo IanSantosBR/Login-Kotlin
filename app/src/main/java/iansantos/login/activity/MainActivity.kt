@@ -11,6 +11,10 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.facebook.login.LoginManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -34,9 +38,9 @@ class MainActivity : AppCompatActivity() {
     private var mAuth: FirebaseAuth? = null
     private var retrofit: Retrofit? = null
     private var progressBar: ProgressBar? = null
-    private var recyclerView: androidx.recyclerview.widget.RecyclerView? = null
+    private var recyclerView: RecyclerView? = null
     private val questions = ArrayList<StackOverflowQuestion>()
-    private var swipeRefreshLayout: androidx.swiperefreshlayout.widget.SwipeRefreshLayout? = null
+    private var swipeRefreshLayout: SwipeRefreshLayout? = null
     private var searchEditText: EditText? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,10 +52,10 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         retrofit = Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(GsonConverterFactory.create()).build()
         mAuth = FirebaseAuth.getInstance()
-        val layoutManager = androidx.recyclerview.widget.LinearLayoutManager(applicationContext)
+        val layoutManager = LinearLayoutManager(applicationContext)
         recyclerView!!.layoutManager = layoutManager
         recyclerView!!.setHasFixedSize(true)
-        recyclerView!!.addItemDecoration(androidx.recyclerview.widget.DividerItemDecoration(this@MainActivity, LinearLayout.VERTICAL))
+        recyclerView!!.addItemDecoration(DividerItemDecoration(this@MainActivity, LinearLayout.VERTICAL))
         adapter = SearchAdapter(questions)
         recyclerView!!.adapter = adapter
         searchEditText!!.setOnEditorActionListener(TextView.OnEditorActionListener { _, actionId, _ ->

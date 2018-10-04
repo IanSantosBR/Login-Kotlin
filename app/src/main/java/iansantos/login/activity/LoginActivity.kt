@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
+import android.util.Patterns
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -61,7 +62,6 @@ class LoginActivity : AppCompatActivity() {
                 Log.d(TAG, "onAuthStateChanged:signed_out")
             }
         }
-
         mCallbackManager = CallbackManager.Factory.create()
         val loginButton = findViewById<LoginButton>(R.id.facebook_login_button)
         loginButton.setReadPermissions("email", "public_profile")
@@ -143,9 +143,15 @@ class LoginActivity : AppCompatActivity() {
         if (TextUtils.isEmpty(email!!.text.toString().trim { it <= ' ' })) {
             email!!.error = "Digite o email"
             areValidFields = false
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(email!!.text).matches()) {
+            email!!.error = "Email não é válido"
+            areValidFields = false
         }
         if (TextUtils.isEmpty(password!!.text.toString().trim { it <= ' ' })) {
             password!!.error = "Digite a senha"
+            areValidFields = false
+        } else if (password!!.text.toString().length < 6) {
+            password!!.error = "Mínimo de 6 caracteres"
             areValidFields = false
         }
         return areValidFields
@@ -159,7 +165,6 @@ class LoginActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e(TAG, e.toString())
         }
-
     }
 
     @Suppress("UNUSED_PARAMETER")
