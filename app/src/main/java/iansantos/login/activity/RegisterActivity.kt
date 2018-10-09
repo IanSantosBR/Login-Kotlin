@@ -6,7 +6,7 @@ import android.app.ProgressDialog
 import android.content.Context
 import android.os.Bundle
 import android.text.TextUtils.isEmpty
-import android.util.Log
+import android.util.Log.*
 import android.util.Patterns
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -15,12 +15,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestore.getInstance
 import iansantos.login.R
 import iansantos.login.model.CloudFirestoreUser
 import iansantos.login.utils.Mask
 import iansantos.login.utils.Mask.CPF_MASK
 import java.util.*
+import kotlin.collections.HashMap
 
 private const val TAG = "RegisterActivity"
 
@@ -48,7 +49,7 @@ class RegisterActivity : AppCompatActivity() {
         password = findViewById(R.id.password)
         passwordConfirmation = findViewById(R.id.password_confirmation)
         mAuth = FirebaseAuth.getInstance()
-        val database = FirebaseFirestore.getInstance()
+        val database = getInstance()
         databaseReference = database.collection("users")
     }
 
@@ -62,11 +63,11 @@ class RegisterActivity : AppCompatActivity() {
                     dialog!!.dismiss()
                     this@RegisterActivity.saveUser()
                     Toast.makeText(this@RegisterActivity, "Cadastrado", Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, "createUserWithEmail:success")
+                    d(TAG, "createUserWithEmail:success")
                     this@RegisterActivity.finish()
                 } else {
                     dialog!!.dismiss()
-                    Log.w(TAG, "createUserWithEmail:failure", task.exception)
+                    w(TAG, "createUserWithEmail:failure", task.exception)
                     Toast.makeText(this@RegisterActivity, Objects.requireNonNull<Exception>(task.exception).message, Toast.LENGTH_SHORT).show()
                 }
             }
@@ -137,7 +138,7 @@ class RegisterActivity : AppCompatActivity() {
             @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
             Objects.requireNonNull(inputManager).hideSoftInputFromWindow(Objects.requireNonNull(currentFocus).windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
         } catch (e: Exception) {
-            Log.e(TAG, e.toString())
+            e(TAG, e.toString())
         }
     }
 }

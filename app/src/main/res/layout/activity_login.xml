@@ -80,22 +80,25 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="128dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
             android:clickable="true"
             android:focusable="true"
             android:onClick="register"
             android:padding="8dp"
             android:text="@string/sign_up_button"
             android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/facebook_login_button" />
+            app:layout_constraintTop_toBottomOf="@+id/sigin_anonymously_button" />
 
-        <com.facebook.login.widget.LoginButton
+        <com.facebook.login.widget.LoginButton xmlns:facebook="http://schemas.android.com/apk/res-auto"
             android:id="@+id/facebook_login_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            facebook:com_facebook_login_text="ENTRAR COM O FACEBOOK"
             android:layout_centerInParent="true"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
@@ -117,5 +120,19 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent" />
+
+        <Button
+            android:id="@+id/sigin_anonymously_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:onClick="signInAnonymously"
+            android:text="@string/sigin_anonymously_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.497"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/facebook_login_button" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

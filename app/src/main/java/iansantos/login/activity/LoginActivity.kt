@@ -7,7 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
-import android.util.Log
+import android.util.Log.*
 import android.util.Patterns
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -26,6 +26,7 @@ import com.google.android.gms.ads.InterstitialAd
 import com.google.android.gms.ads.MobileAds
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuth.AuthStateListener
 import iansantos.login.R
 import java.util.*
 
@@ -34,7 +35,7 @@ private const val TAG = "LoginActivity"
 class LoginActivity : AppCompatActivity() {
     private var mAuth: FirebaseAuth? = null
     private var mCallbackManager: CallbackManager? = null
-    private var mAuthListener: FirebaseAuth.AuthStateListener? = null
+    private var mAuthListener: AuthStateListener? = null
     private var email: EditText? = null
     private var password: EditText? = null
     private var dialog: ProgressDialog? = null
@@ -52,14 +53,14 @@ class LoginActivity : AppCompatActivity() {
         email = findViewById(R.id.email)
         password = findViewById(R.id.password)
         mAuth = FirebaseAuth.getInstance()
-        mAuthListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+        mAuthListener = AuthStateListener { firebaseAuth ->
             val user = firebaseAuth.currentUser
             if (user != null) {
-                Log.d(TAG, "onAuthStateChanged:signed_in:${user.uid}")
+                d(TAG, "onAuthStateChanged:signed_in:${user.uid}")
                 this@LoginActivity.startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                 this@LoginActivity.finish()
             } else {
-                Log.d(TAG, "onAuthStateChanged:signed_out")
+                d(TAG, "onAuthStateChanged:signed_out")
             }
         }
         mCallbackManager = CallbackManager.Factory.create()
@@ -67,16 +68,16 @@ class LoginActivity : AppCompatActivity() {
         loginButton.setReadPermissions("email", "public_profile")
         loginButton.registerCallback(mCallbackManager, object : FacebookCallback<LoginResult> {
             override fun onSuccess(loginResult: LoginResult) {
-                Log.d(TAG, "facebook:onSuccess:$loginResult")
+                d(TAG, "facebook:onSuccess:$loginResult")
                 handleFacebookAccessToken(loginResult.accessToken)
             }
 
             override fun onCancel() {
-                Log.d(TAG, "facebook:onCancel")
+                d(TAG, "facebook:onCancel")
             }
 
             override fun onError(error: FacebookException) {
-                Log.d(TAG, "facebook:onError", error)
+                d(TAG, "facebook:onError", error)
             }
         })
     }
@@ -99,11 +100,11 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun handleFacebookAccessToken(token: AccessToken) {
-        Log.d(TAG, "handleFacebookAccessToken:$token")
+        d(TAG, "handleFacebookAccessToken:$token")
         dialog = ProgressDialog.show(this@LoginActivity, "", "Carregando...", true)
         val credential = FacebookAuthProvider.getCredential(token.token)
         mAuth!!.signInWithCredential(credential).addOnCompleteListener(this) { task ->
-            Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful)
+            d(TAG, "signInWithCredential:onComplete:${task.isSuccessful}")
             if (task.isSuccessful) {
                 dialog!!.dismiss()
                 Toast.makeText(this@LoginActivity, "Conectado", Toast.LENGTH_SHORT).show()
@@ -121,20 +122,33 @@ class LoginActivity : AppCompatActivity() {
         hideKeyboard()
         if (areValidFields()) {
             dialog = ProgressDialog.show(this@LoginActivity, "", "Entrando...", true)
-            mAuth!!.signInWithEmailAndPassword(email!!.text.toString(), password!!.text.toString())
-                    .addOnCompleteListener(this) { task ->
-                        if (task.isSuccessful) {
-                            Log.d(TAG, "signInWithEmail:success")
-                            dialog!!.dismiss()
-                            Toast.makeText(this@LoginActivity, "Conectado", Toast.LENGTH_SHORT).show()
-                        } else {
-                            dialog!!.dismiss()
-                            Log.w(TAG, "signInWithEmail:failure", task.exception)
-                            Toast.makeText(this@LoginActivity, Objects.requireNonNull<Exception>(task.exception).message, Toast.LENGTH_SHORT).show()
-                        }
-                    }
+            mAuth!!.signInWithEmailAndPassword(email!!.text.toString(), password!!.text.toString()).addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    d(TAG, "signInWithEmail:success")
+                    dialog!!.dismiss()
+                    Toast.makeText(this@LoginActivity, "Conectado", Toast.LENGTH_SHORT).show()
+
+                } else {
+                    dialog!!.dismiss()
+                    w(TAG, "signInWithEmail:failure", task.exception)
+                    Toast.makeText(this@LoginActivity, Objects.requireNonNull<Exception>(task.exception).message, Toast.LENGTH_SHORT).show()
+                }
+            }
         } else {
             Toast.makeText(this@LoginActivity, "Verifique os campos obrigatórios", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun signInAnonymously(view: View) {
+        mAuth!!.signInAnonymously().addOnCompleteListener(this) { task ->
+            if (task.isSuccessful) {
+                d(TAG, "signInAnonymously:success")
+                Toast.makeText(this@LoginActivity, "Conectado", Toast.LENGTH_SHORT).show()
+            } else {
+                w(TAG, "signInAnonymously:failure", task.exception)
+                Toast.makeText(this@LoginActivity, "Authentication failed.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -163,7 +177,7 @@ class LoginActivity : AppCompatActivity() {
             @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
             Objects.requireNonNull(inputManager).hideSoftInputFromWindow(currentFocus.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
         } catch (e: Exception) {
-            Log.e(TAG, e.toString())
+            e(TAG, e.toString())
         }
     }
 

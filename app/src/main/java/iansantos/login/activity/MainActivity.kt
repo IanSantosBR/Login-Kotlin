@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
+import android.util.Log.*
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -16,12 +16,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.facebook.login.LoginManager
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.FirebaseAuth.getInstance
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
 import iansantos.login.R
 import iansantos.login.adapter.SearchAdapter
 import iansantos.login.api.SearchService
 import iansantos.login.api.SearchService.Companion.BASE_URL
+import iansantos.login.model.CloudFirestoreUserPresence
 import iansantos.login.model.StackOverflowQuestion
 import iansantos.login.model.StackOverflowSearch
 import retrofit2.Call
@@ -51,7 +55,7 @@ class MainActivity : AppCompatActivity() {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
         recyclerView = findViewById(R.id.recyclerView)
         retrofit = Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(GsonConverterFactory.create()).build()
-        mAuth = FirebaseAuth.getInstance()
+        mAuth = getInstance()
         val layoutManager = LinearLayoutManager(applicationContext)
         recyclerView!!.layoutManager = layoutManager
         recyclerView!!.setHasFixedSize(true)
@@ -77,15 +81,28 @@ class MainActivity : AppCompatActivity() {
             }
         }
         showAdvertising()
+        userOnline(CloudFirestoreUserPresence())
+    }
+
+    override fun onStop() {
+        super.onStop()
+        userOffline(CloudFirestoreUserPresence())
+    }
+
+    override fun onResume() {
+        super.onResume()
+        userOnline(CloudFirestoreUserPresence())
     }
 
     @Suppress("UNUSED_PARAMETER")
     fun signOut(view: View) {
+        val userEmail = mAuth!!.currentUser!!.email
         if (mAuth != null) {
             val alert = AlertDialog.Builder(this)
-            alert.setMessage(String.format("Desconectar da conta %s?", Objects.requireNonNull<FirebaseUser>(mAuth!!.currentUser).email))
+            alert.setMessage("Desconectar da conta ${if (userEmail.isNullOrBlank()) "anônima" else userEmail}?")
             alert.setCancelable(false)
             alert.setPositiveButton(android.R.string.yes) { _, _ ->
+                userOffline(CloudFirestoreUserPresence())
                 mAuth!!.signOut()
                 LoginManager.getInstance().logOut()
                 this@MainActivity.startActivity(Intent(this@MainActivity, LoginActivity::class.java))
@@ -94,7 +111,7 @@ class MainActivity : AppCompatActivity() {
             }
             alert.setNegativeButton(android.R.string.no) { dialogInterface, _ -> dialogInterface.dismiss() }
             alert.show()
-        } else {
+        } else if (mAuth!!.currentUser == null) {
             Toast.makeText(this@MainActivity, "Falha ao desconectar", Toast.LENGTH_LONG).show()
         }
     }
@@ -103,7 +120,7 @@ class MainActivity : AppCompatActivity() {
         if (LoginActivity.mInterstitialAd.isLoaded) {
             LoginActivity.mInterstitialAd.show()
         } else {
-            Log.d(TAG, "The interstitial wasn't loaded yet.")
+            d(TAG, "The interstitial wasn't loaded yet.")
         }
     }
 
@@ -123,18 +140,18 @@ class MainActivity : AppCompatActivity() {
                         val search = response.body()
                         for (question in Objects.requireNonNull<StackOverflowSearch>(search).items) {
                             val user = question.owner
-                            Log.i(TAG, String.format("%s \n%s \n%s", question.title, question.link, user!!.name))
+                            i(TAG, "${question.title} \n${question.link} \n${user!!.name}")
                         }
                         initAdapter(search!!.items)
                     } else {
-                        Log.e(TAG, response.code().toString())
+                        e(TAG, response.code().toString())
                     }
                 }
 
                 override fun onFailure(call: Call<StackOverflowSearch>, t: Throwable) {
                     progressBar!!.visibility = View.GONE
                     swipeRefreshLayout!!.isRefreshing = false
-                    Log.d(TAG, t.message)
+                    d(TAG, t.message)
                 }
             })
         } else {
@@ -150,7 +167,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onItemClick(position: Int) {
                     val alert = AlertDialog.Builder(this@MainActivity)
                     val title = questionsList[position].title!!.replace("&#39;", "\'").replace("&amp;", "&").replace("&quot;", "\"")
-                    alert.setMessage(String.format("Ir para o link da questão: \"%s\" ?", title))
+                    alert.setMessage("Ir para o link da questão: \"$title\" ?")
                     alert.setCancelable(true)
                     alert.setPositiveButton(android.R.string.yes) { _, _ ->
                         val url = questionsList[position].link
@@ -165,13 +182,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun userOnline(user: CloudFirestoreUserPresence) {
+        val presenceRef = FirebaseDatabase.getInstance().getReference("status/${mAuth!!.uid!!}")
+        presenceRef.onDisconnect().setValue("disconnected").addOnCompleteListener {
+            d(TAG, "Success")
+        }
+        val query = FirebaseFirestore.getInstance().collection("users").document(mAuth!!.uid!!)
+        query.toString()
+        user.apply {
+            online = true
+            lastActive = Timestamp.now()
+        }
+        query.update("lastActive", user.lastActive, "online", if (user.online) "online" else "offline")
+        FirebaseDatabase.getInstance().getReference("status/${mAuth!!.uid}").setValue("online")
+    }
+
+    private fun userOffline(user: CloudFirestoreUserPresence) {
+        if (mAuth!!.uid != null) {
+            val query = FirebaseFirestore.getInstance().collection("users").document(mAuth!!.uid!!)
+            query.toString()
+            user.apply {
+                online = false
+                lastActive = Timestamp.now()
+            }
+            query.update("lastActive", user.lastActive, "online", if (!user.online) "offline" else "online")
+            FirebaseDatabase.getInstance().getReference("status/${mAuth!!.uid}").setValue("offline")
+        }
+    }
+
     private fun hideKeyboard() {
         val inputManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         try {
             @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
             Objects.requireNonNull(inputManager).hideSoftInputFromWindow(Objects.requireNonNull(currentFocus).windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
         } catch (e: Exception) {
-            Log.e(TAG, e.toString())
+            e(TAG, e.toString())
         }
     }
 }
